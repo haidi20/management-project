@@ -1,6 +1,6 @@
 <template>
   <b-row class="bg-base">
-    <b-col col offset-md="3" md="5" class="content">
+    <b-col col md="6" class="content">
       <h3>
         <b>Data Karyawan</b>
       </h3>
@@ -21,7 +21,7 @@
       <br />
       <b-row>
         <b-col cols>
-          <b-button variant="success" @click="onCreate()" size="sm">Buat</b-button>
+          <b-button variant="success" @click="onCreate()" size="sm">Tambah Data Karyawan</b-button>
         </b-col>
       </b-row>
       <br />
@@ -58,10 +58,52 @@
         </b-col>
       </b-row>
     </b-col>
-    <b-col col md="3"></b-col>
-    <b-modal id="form" ref="form" size="xl" hide-footer>
+    <!-- <b-col col md="3"></b-col> -->
+    <b-modal id="form" ref="form" size="lg" hide-footer>
       <b-row>
-        <b-col col md="12">form</b-col>
+        <b-col col md="4">
+          <b-form-group label="Nik Karyawan" label-for class>
+            <b-form-input v-model="form.nik_employee" id="nik_employee" name="nik_employee"></b-form-input>
+          </b-form-group>
+        </b-col>
+        <b-col col md="4">
+          <b-form-group label="Nama Karyawan" label-for class>
+            <b-form-input v-model="form.name_employee" id="name_employee" name="name_employee"></b-form-input>
+          </b-form-group>
+        </b-col>
+        <b-col col md="4">
+          <b-form-group label="Gaji Pokok" label-for class>
+            <b-form-input
+              v-model="form.salary_readable"
+              @input="value => onChangeSalary(value)"
+              id="salary"
+              name="salary"
+            ></b-form-input>
+          </b-form-group>
+        </b-col>
+      </b-row>
+      <b-row>
+        <b-col col md="4">
+          <b-form-group label="Alpa" label-for class>
+            <b-form-input v-model="form.absent" id="absent" name="absent"></b-form-input>
+          </b-form-group>
+        </b-col>
+        <b-col col md="4">
+          <b-form-group label="Ijin" label-for class>
+            <b-form-input v-model="form.authorization" id="authorization" name="authorization"></b-form-input>
+          </b-form-group>
+        </b-col>
+        <b-col col md="4">
+          <b-form-group label="Hadir" label-for class>
+            <b-form-input v-model="form.present" id="present" name="present"></b-form-input>
+          </b-form-group>
+        </b-col>
+      </b-row>
+      <b-row>
+        <b-col cols>
+          <b-button class="float-right ml-4" variant="success" @click="onSend()">Simpan</b-button>
+          <b-button class="float-right" variant="danger" @click="onClearForm()">Batal</b-button>
+        </b-col>
       </b-row>
     </b-modal>
   </b-row>
@@ -70,10 +112,25 @@
 <script>
 import DatePicker from "vue2-datepicker";
 
+import { formatCurrency, numbersOnly } from "./utils";
+
+const defaultForm = {
+  nik_employee: null,
+  name_employee: null,
+  salary: null,
+  salary_readable: "",
+  absent: null,
+  authorization: null,
+  present: null,
+};
+
 export default {
   data() {
     return {
       date_filter: new Date(),
+      form: {
+        ...defaultForm,
+      },
       data: [
         {
           nik: 123,
@@ -89,13 +146,29 @@ export default {
   components: {
     DatePicker,
   },
+  computed: {
+    //
+  },
   methods: {
+    onChangeSalary(value) {
+      const numericValue = numbersOnly(value.toString());
+      const readAble = formatCurrency(value, ".");
+
+      this.form.salary = numericValue;
+      this.form.salary_readable = readAble;
+    },
     onCreate() {
       // console.info("create");
       this.$bvModal.show("form");
     },
     onEdit() {
       //
+    },
+    onSend() {
+      console.info(this.form);
+    },
+    onClearForm() {
+      this.form = { ...defaultForm };
     },
   },
 };
@@ -107,6 +180,7 @@ export default {
   padding: 10px;
 }
 .bg-base {
+  justify-content: center;
   background-color: #92a9bd;
   height: 100%;
 }
