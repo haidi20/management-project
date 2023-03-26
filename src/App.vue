@@ -20,8 +20,11 @@
       </b-row>
       <br />
       <b-row>
-        <b-col cols>
+        <b-col col md="4">
           <b-button variant="success" @click="onCreate()" size="sm">Tambah Data Karyawan</b-button>
+        </b-col>
+        <b-col cols>
+          <b-button variant="info" @click="onRefresh()" size="sm">Perbaharui Data</b-button>
         </b-col>
       </b-row>
       <br />
@@ -42,13 +45,13 @@
             <b-tbody>
               <b-tr v-for="(item, index) in data" :key="index">
                 <b-td>
-                  <b-dropdown id="form" text="Aksi" variant="success" size="sm">
+                  <b-dropdown id="form" text="Aksi" variant="info" size="sm">
                     <b-dropdown-item @click="onEdit">Edit</b-dropdown-item>
                   </b-dropdown>
                 </b-td>
                 <b-td>{{item.nik}}</b-td>
                 <b-td>{{item.name}}</b-td>
-                <b-td>{{item.salary}}</b-td>
+                <b-td>{{setFormatCurrency(item.salary)}}</b-td>
                 <b-td>{{item.absent}}</b-td>
                 <b-td>{{item.authorization}}</b-td>
                 <b-td>{{item.present}}</b-td>
@@ -58,59 +61,21 @@
         </b-col>
       </b-row>
     </b-col>
-    <!-- <b-col col md="3"></b-col> -->
-    <b-modal id="form" ref="form" size="lg" hide-footer>
-      <b-row>
-        <b-col col md="4">
-          <b-form-group label="Nik Karyawan" label-for class>
-            <b-form-input v-model="form.nik_employee" id="nik_employee" name="nik_employee"></b-form-input>
-          </b-form-group>
-        </b-col>
-        <b-col col md="4">
-          <b-form-group label="Nama Karyawan" label-for class>
-            <b-form-input v-model="form.name_employee" id="name_employee" name="name_employee"></b-form-input>
-          </b-form-group>
-        </b-col>
-        <b-col col md="4">
-          <b-form-group label="Gaji Pokok" label-for class>
-            <b-form-input
-              v-model="form.salary_readable"
-              @input="value => onChangeSalary(value)"
-              id="salary"
-              name="salary"
-            ></b-form-input>
-          </b-form-group>
-        </b-col>
-      </b-row>
-      <b-row>
-        <b-col col md="4">
-          <b-form-group label="Alpa" label-for class>
-            <b-form-input v-model="form.absent" id="absent" name="absent"></b-form-input>
-          </b-form-group>
-        </b-col>
-        <b-col col md="4">
-          <b-form-group label="Ijin" label-for class>
-            <b-form-input v-model="form.authorization" id="authorization" name="authorization"></b-form-input>
-          </b-form-group>
-        </b-col>
-        <b-col col md="4">
-          <b-form-group label="Hadir" label-for class>
-            <b-form-input v-model="form.present" id="present" name="present"></b-form-input>
-          </b-form-group>
-        </b-col>
-      </b-row>
-      <b-row>
-        <b-col cols>
-          <b-button class="float-right ml-4" variant="success" @click="onSend()">Simpan</b-button>
-          <b-button class="float-right" variant="danger" @click="onClearForm()">Batal</b-button>
-        </b-col>
-      </b-row>
-    </b-modal>
+    <Modals
+      :form="form"
+      :onSend="onSend"
+      :onClearForm="onClearForm"
+      :onChangeSalary="onChangeSalary"
+    />
   </b-row>
 </template>
 
 <script>
+import axios from "axios";
 import DatePicker from "vue2-datepicker";
+
+//partials
+import Modals from "./modals.vue";
 
 import { formatCurrency, numbersOnly } from "./utils";
 
@@ -132,24 +97,55 @@ export default {
         ...defaultForm,
       },
       data: [
-        {
-          nik: 123,
-          name: "rizal",
-          salary: 3500000,
-          absent: 1,
-          authorization: 0, // ijin
-          present: 21,
-        },
+        // {
+        //   nik: 123,
+        //   name: "rizal",
+        //   salary: 3500000,
+        //   absent: 1,
+        //   authorization: 0, // ijin
+        //   present: 21,
+        // },
       ],
+      // base_url: "http://localhost/BEP-ERP",
+      base_url: "https://testing.bepcoal.id",
     };
   },
   components: {
     DatePicker,
+    Modals,
+  },
+  mounted() {
+    this.fetchData();
   },
   computed: {
     //
   },
   methods: {
+    async fetchData() {
+      const params = {
+        //
+      };
+
+      try {
+        await axios
+          .get(`${this.base_url}/api/v1/z-karyawan/fetch-data`, {
+            params: params,
+          })
+          .then((responses) => {
+            console.info(responses);
+            const data = responses.data.data;
+
+            this.data = [...data];
+          });
+      } catch (error) {
+        // alert(error);
+
+        console.info(error);
+      }
+    },
+    onRefresh() {
+      this.fetchData();
+    },
     onChangeSalary(value) {
       const numericValue = numbersOnly(value.toString());
       const readAble = formatCurrency(value, ".");
@@ -159,16 +155,25 @@ export default {
     },
     onCreate() {
       // console.info("create");
-      this.$bvModal.show("form");
+      this.$bvModal.show("form_add_employee");
     },
     onEdit() {
-      //
+      this.$bvModal.show("form_update_attendance");
     },
     onSend() {
       console.info(this.form);
     },
+    onSendAttendance() {
+      console.info(this.form);
+    },
     onClearForm() {
       this.form = { ...defaultForm };
+
+      this.$bvModal.hide("form_add_employee");
+      this.$bvModal.hide("form_update_attendance");
+    },
+    setFormatCurrency(value) {
+      return value != null ? formatCurrency(value?.toString(), ".") : null;
     },
   },
 };
