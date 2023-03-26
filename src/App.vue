@@ -2,12 +2,12 @@
   <b-row class="bg-base">
     <b-col col md="6" class="content">
       <h3>
-        <b>Data Karyawan</b>
+        <b>HRD - Data Karyawan</b>
       </h3>
       <br />
       <b-row>
         <b-col cols>
-          <b-form-group label="Bulan" label-for="date_filter">
+          <b-form-group label="Bulan" label-for="date_filter" style="display:inline-block">
             <DatePicker
               id="date_filter"
               v-model="date_filter"
@@ -16,18 +16,20 @@
               placeholder="pilih bulan"
             />
           </b-form-group>
+          <b-button
+            variant="info"
+            @click="onRefresh()"
+            size="sm"
+            style="margin-left: 10px"
+          >Perbaharui Data</b-button>
+          <b-button
+            variant="success"
+            @click="onCreate()"
+            size="sm"
+            style="margin-left: 10px"
+          >Tambah Data Karyawan</b-button>
         </b-col>
       </b-row>
-      <br />
-      <b-row>
-        <b-col col md="4">
-          <b-button variant="success" @click="onCreate()" size="sm">Tambah Data Karyawan</b-button>
-        </b-col>
-        <b-col cols>
-          <b-button variant="info" @click="onRefresh()" size="sm">Perbaharui Data</b-button>
-        </b-col>
-      </b-row>
-      <br />
       <b-row>
         <b-col cols>
           <b-table-simple hover medium caption-top responsive :bordered="true">
@@ -46,7 +48,9 @@
               <b-tr v-for="(item, index) in data" :key="index">
                 <b-td>
                   <b-dropdown id="form" text="Aksi" variant="info" size="sm">
-                    <b-dropdown-item @click="onEdit">Edit</b-dropdown-item>
+                    <b-dropdown-item @click="onShowSalary(item)">Total Gaji</b-dropdown-item>
+                    <b-dropdown-item @click="onEdit(item)">Ubah</b-dropdown-item>
+                    <b-dropdown-item @click="onDelete(item.id)">Hapus</b-dropdown-item>
                   </b-dropdown>
                 </b-td>
                 <b-td>{{item.nik}}</b-td>
@@ -66,12 +70,14 @@
       :onSend="onSend"
       :onClearForm="onClearForm"
       :onChangeSalary="onChangeSalary"
+      :onSendAttendance="onSendAttendance"
     />
   </b-row>
 </template>
 
 <script>
 import axios from "axios";
+import moment from "moment";
 import DatePicker from "vue2-datepicker";
 
 //partials
@@ -80,8 +86,9 @@ import Modals from "./modals.vue";
 import { formatCurrency, numbersOnly } from "./utils";
 
 const defaultForm = {
-  nik_employee: null,
-  name_employee: null,
+  nik: null,
+  name: null,
+  z_employee_id: null,
   salary: null,
   salary_readable: "",
   absent: null,
@@ -120,11 +127,18 @@ export default {
   computed: {
     //
   },
+  watch: {
+    date_filter(newValue, oldValue) {
+      // console.info(newValue);
+    },
+  },
   methods: {
     async fetchData() {
       const params = {
-        //
+        date_filter: moment(this.date_filter).format("Y-MM-DD"),
       };
+
+      // console.info(params);
 
       try {
         await axios
@@ -132,7 +146,7 @@ export default {
             params: params,
           })
           .then((responses) => {
-            console.info(responses);
+            // console.info(responses);
             const data = responses.data.data;
 
             this.data = [...data];
@@ -155,16 +169,88 @@ export default {
     },
     onCreate() {
       // console.info("create");
+      this.onClearForm();
       this.$bvModal.show("form_add_employee");
     },
-    onEdit() {
+    onEdit(item) {
+      this.form = {
+        ...this.form,
+        ...item,
+      };
+      this.form.name_employee = item.name;
+      this.form.z_employee_id = item.id;
       this.$bvModal.show("form_update_attendance");
     },
-    onSend() {
-      console.info(this.form);
+    async onSend() {
+      // return false;
+
+      this.is_loading = true;
+
+      await axios
+        .post(`${this.base_url}/api/v1/z-karyawan/store`, {
+          ...this.form,
+        })
+        .then((responses) => {
+          this.is_loading = false;
+          const data = responses.data;
+
+          if (data.success == true) {
+            this.fetchData();
+            this.$bvModal.hide("form_add_employee");
+            this.onClearForm();
+          }
+        })
+        .catch((err) => {
+          console.info(err);
+          this.is_loading = false;
+        });
     },
-    onSendAttendance() {
-      console.info(this.form);
+    async onSendAttendance() {
+      // console.info(this.form);
+      // return false;
+
+      this.is_loading = true;
+
+      await axios
+        .post(`${this.base_url}/api/v1/z-karyawan/store-attendance`, {
+          ...this.form,
+          date: moment(this.date_filter).format("Y-MM-DD"),
+        })
+        .then((responses) => {
+          // console.info(responses);
+          this.is_loading = false;
+          const data = responses.data;
+
+          if (data.success == true) {
+            this.fetchData();
+            this.$bvModal.hide("form_update_attendance");
+            this.onClearForm();
+          }
+        })
+        .catch((err) => {
+          console.info(err);
+          this.is_loading = false;
+        });
+    },
+    async onDelete(id) {
+      // return false;
+
+      this.is_loading = true;
+
+      await axios
+        .post(`${this.base_url}/api/v1/z-karyawan/delete`, {
+          id: id,
+        })
+        .then((responses) => {
+          this.is_loading = false;
+          const data = responses.data;
+
+          this.fetchData();
+        })
+        .catch((err) => {
+          console.info(err);
+          this.is_loading = false;
+        });
     },
     onClearForm() {
       this.form = { ...defaultForm };

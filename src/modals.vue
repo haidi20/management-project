@@ -10,12 +10,12 @@
       <b-row>
         <b-col col md="4">
           <b-form-group label="Nik Karyawan" label-for class>
-            <b-form-input v-model="form.nik_employee" id="nik_employee" name="nik_employee"></b-form-input>
+            <b-form-input v-model="form.nik" id="nik" name="nik"></b-form-input>
           </b-form-group>
         </b-col>
         <b-col col md="4">
           <b-form-group label="Nama Karyawan" label-for class>
-            <b-form-input v-model="form.name_employee" id="name_employee" name="name_employee"></b-form-input>
+            <b-form-input v-model="form.name" id="name" name="name"></b-form-input>
           </b-form-group>
         </b-col>
         <b-col col md="4">
@@ -43,6 +43,9 @@
       size="lg"
       hide-footer
     >
+      <b-row>
+        <b-col col md="4">Nama Karyawan : {{form.name_employee}}</b-col>
+      </b-row>
       <b-row>
         <b-col col md="4">
           <b-form-group label="Alpa" label-for class>
